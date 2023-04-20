@@ -1,18 +1,22 @@
-import time,re,random
+import platform
 from time import sleep
 import undetected_chromedriver as uc
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 import mysql.connector
-import json
+
+#detect platform
+SYSTEM_OS=platform.system()
 
 def tor_browser():
-   options = uc.ChromeOptions() 
-   options.add_argument(f'--proxy-server=socks5://127.0.0.1:9050')
-   #options.user_data_dir = "/home/chromeprofileforbots"  
-   #return uc.Chrome(user_data_dir="/home/chromeprofileforbots",options=options,version_main=109)  
-   return uc.Chrome(user_data_dir="/home/copytraderscrapingprofile",browser_executable_path='/usr/bin/brave-browser',headless=False,version_main=111,options=options)      
+    options = uc.ChromeOptions() 
+    options.add_argument(f'--proxy-server=socks5://127.0.0.1:9050')
+    #options.user_data_dir = "/home/chromeprofileforbots"  
+    if SYSTEM_OS=='Linux':
+        return uc.Chrome(user_data_dir="/home/copytraderscrapingprofile",browser_executable_path='/usr/bin/brave-browser',headless=False,version_main=111,options=options) 
+    elif SYSTEM_OS=='Windows':
+        return uc.Chrome(user_data_dir="G:\\copytraderscrapingprofile",browser_executable_path='C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\brave.exe',headless=False,version_main=111,options=options)      
 
 def insert_details(company,rating,category,phone,website,claim_status,latitude,longitude,gmaps_url):
     connection = mysql.connector.connect(

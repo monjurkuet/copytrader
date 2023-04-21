@@ -7,12 +7,15 @@ from selenium.webdriver.common.by import By
 import mysql.connector
 import json
 import time
+import random
 
 #detect platform
 SYSTEM_OS=platform.system()
 #global variables
 LEADERBOARD_URL='https://www.binance.com/bapi/futures/v3/public/future/leaderboard/getLeaderboardRank'
 POSITION_URL='https://www.binance.com/bapi/futures/v1/public/future/leaderboard/getPositionStatus'
+POSITION_DETAILS_URL='https://www.binance.com/bapi/futures/v1/public/future/leaderboard/getOtherPosition'
+PERFORMANCE_URL=''
 PROXY=False
 LEADERBOARD_TIME_OPTIONS=['Daily','Weekly','Monthly','Total']
 
@@ -83,6 +86,80 @@ def extract_baseinfo(leaderboard_data):
         print(data_tuple)
     connection.close()
 
+def extract_position_data(encryptedUid_list):
+    for encryptedUid in encryptedUid_list:
+        url='https://www.binance.com/en/futures-activity/leaderboard/user/um?encryptedUid='+ encryptedUid
+        driver.get(url)   
+        time.sleep(10)
+        logs_raw = driver.get_log("performance")  
+        logs = [json.loads(lr["message"])["message"] for lr in logs_raw]
+        POSTION_DETAILS_log=clean_logs(logs,POSITION_DETAILS_URL)
+        if POSTION_DETAILS_log is not None:
+            connection = mysql.connector.connect(#host='localhost', 
+                                    host='161.97.97.183',
+                                    database='exchangetrading',
+                                    user='root', 
+                                    password='$C0NTaB0vps8765%%$#', 
+                                    port=3306
+                                    ,auth_plugin='caching_sha2_password')
+            cursor = connection.cursor() 
+            response_body=extract_json_from_log(POSTION_DETAILS_log,driver)
+            data=response_body['data']
+            if data['otherPositionRetList'] is not None:
+                for each_position in data['otherPositionRetList']:
+                    amount=each_position['amount']
+                    entryPrice=each_position['entryPrice']
+                    leverage=each_position['leverage']
+                    markPrice=each_position['markPrice']
+                    pnl=each_position['pnl']
+                    roe=each_position['roe']
+                    symbol=each_position['symbol']
+                    updateTimeStamp=each_position['updateTimeStamp']
+                    sql_insert_with_param = """REPLACE INTO binance_positions
+                          (amount,entryPrice,leverage,markPrice,pnl,roe,symbol,updateTimeStamp,encryptedUid) 
+                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);""" 
+                    data_tuple = (amount,entryPrice,leverage,markPrice,pnl,roe,symbol,updateTimeStamp,encryptedUid)
+                    cursor.execute(sql_insert_with_param, data_tuple)
+                    connection.commit() 
+                    print(data_tuple)
+            connection.close()
+
+def extract_performancedata(performance_dictionary):
+    lastTradeTime=performance_dictionary['data']['lastTradeTime']
+    connection = mysql.connector.connect(#host='localhost', 
+                                host='161.97.97.183',
+                                database='exchangetrading',
+                                user='root', 
+                                password='$C0NTaB0vps8765%%$#', 
+                                port=3306
+                                ,auth_plugin='caching_sha2_password')
+    cursor = connection.cursor() 
+    for each_period in performance_dictionary['data']['performanceRetList']:
+        if each_period['periodType']=='DAILY' and each_period['statisticsType']=='ROI':
+            DAILY_ROI= each_period['value']
+        if each_period['periodType']=='DAILY' and each_period['statisticsType']=='PNL':
+            DAILY_PNL= each_period['value']
+        if each_period['periodType']=='EXACT_WEEKLY' and each_period['statisticsType']=='ROI':
+            WEEKLY_ROI= each_period['value']
+        if each_period['periodType']=='EXACT_WEEKLY' and each_period['statisticsType']=='PNL':
+            WEEKLY_PNL= each_period['value']
+        if each_period['periodType']=='EXACT_MONTHLY' and each_period['statisticsType']=='ROI':
+            MONTHLY_ROI = each_period['value']
+        if each_period['periodType']=='EXACT_MONTHLY' and each_period['statisticsType']=='PNL':
+            MONTHLY_PNL = each_period['value']
+        if each_period['periodType']=='YEARLY' and each_period['statisticsType']=='ROI':
+            YEARLY_ROI = each_period['value']
+        if each_period['periodType']=='YEARLY' and each_period['statisticsType']=='PNL':
+            YEARLY_PNL = each_period['value']          
+        # mysql insert  
+        sql_insert_with_param = """REPLACE INTO binance_performance
+                          (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,encryptedUid,lastTradeTime) 
+                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""" 
+        data_tuple = (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,encryptedUid,lastTradeTime)
+        cursor.execute(sql_insert_with_param, data_tuple)
+        connection.commit() 
+        print(data_tuple)
+
 if __name__ == "__main__":
     driver=tor_browser()
     # crawl leaderboard
@@ -121,5 +198,8 @@ if __name__ == "__main__":
             POSITION_log=clean_logs(logs,POSITION_URL)
             if POSITION_log is None:
                 break
+    encryptedUid_list=list(set(encryptedUid_list))
+    extract_position_data(encryptedUid_list)
+    
 
     

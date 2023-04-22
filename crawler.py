@@ -15,7 +15,7 @@ SYSTEM_OS=platform.system()
 LEADERBOARD_URL='https://www.binance.com/bapi/futures/v3/public/future/leaderboard/getLeaderboardRank'
 POSITION_URL='https://www.binance.com/bapi/futures/v1/public/future/leaderboard/getPositionStatus'
 POSITION_DETAILS_URL='https://www.binance.com/bapi/futures/v1/public/future/leaderboard/getOtherPosition'
-PERFORMANCE_URL=''
+PERFORMANCE_URL='https://www.binance.com/bapi/futures/v2/public/future/leaderboard/getOtherPerformance'
 PROXY=False
 LEADERBOARD_TIME_OPTIONS=['Daily','Weekly','Monthly','Total']
 
@@ -123,9 +123,14 @@ def extract_position_data(encryptedUid_list):
                     connection.commit() 
                     print(data_tuple)
             connection.close()
+        PERFORMANCE_DETAILS_log=clean_logs(logs,PERFORMANCE_URL)
+        if PERFORMANCE_DETAILS_log is not None:
+            response_body=extract_json_from_log(PERFORMANCE_DETAILS_log,driver)
+            performance_dictionary=response_body['data']
+            extract_performancedata(performance_dictionary,encryptedUid)    
 
-def extract_performancedata(performance_dictionary):
-    lastTradeTime=performance_dictionary['data']['lastTradeTime']
+def extract_performancedata(performance_dictionary,encryptedUid):
+    lastTradeTime=performance_dictionary['lastTradeTime']
     connection = mysql.connector.connect(#host='localhost', 
                                 host='161.97.97.183',
                                 database='exchangetrading',
@@ -134,31 +139,37 @@ def extract_performancedata(performance_dictionary):
                                 port=3306
                                 ,auth_plugin='caching_sha2_password')
     cursor = connection.cursor() 
-    for each_period in performance_dictionary['data']['performanceRetList']:
+    YEARLY_ROI =0
+    YEARLY_PNL=0
+    for each_period in performance_dictionary['performanceRetList']:
         if each_period['periodType']=='DAILY' and each_period['statisticsType']=='ROI':
             DAILY_ROI= each_period['value']
         if each_period['periodType']=='DAILY' and each_period['statisticsType']=='PNL':
             DAILY_PNL= each_period['value']
-        if each_period['periodType']=='EXACT_WEEKLY' and each_period['statisticsType']=='ROI':
+        if each_period['periodType']=='WEEKLY' and each_period['statisticsType']=='ROI':
             WEEKLY_ROI= each_period['value']
-        if each_period['periodType']=='EXACT_WEEKLY' and each_period['statisticsType']=='PNL':
+        if each_period['periodType']=='WEEKLY' and each_period['statisticsType']=='PNL':
             WEEKLY_PNL= each_period['value']
-        if each_period['periodType']=='EXACT_MONTHLY' and each_period['statisticsType']=='ROI':
+        if each_period['periodType']=='MONTHLY' and each_period['statisticsType']=='ROI':
             MONTHLY_ROI = each_period['value']
-        if each_period['periodType']=='EXACT_MONTHLY' and each_period['statisticsType']=='PNL':
+        if each_period['periodType']=='MONTHLY' and each_period['statisticsType']=='PNL':
             MONTHLY_PNL = each_period['value']
         if each_period['periodType']=='YEARLY' and each_period['statisticsType']=='ROI':
             YEARLY_ROI = each_period['value']
         if each_period['periodType']=='YEARLY' and each_period['statisticsType']=='PNL':
-            YEARLY_PNL = each_period['value']          
-        # mysql insert  
-        sql_insert_with_param = """REPLACE INTO binance_performance
-                          (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,encryptedUid,lastTradeTime) 
-                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""" 
-        data_tuple = (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,encryptedUid,lastTradeTime)
-        cursor.execute(sql_insert_with_param, data_tuple)
-        connection.commit() 
-        print(data_tuple)
+            YEARLY_PNL = each_period['value']        
+        if each_period['periodType']=='ALL' and each_period['statisticsType']=='ROI':
+            ALL_ROI = each_period['value']
+        if each_period['periodType']=='ALL' and each_period['statisticsType']=='PNL':
+            ALL_PNL = each_period['value']     
+    # mysql insert  
+    sql_insert_with_param = """REPLACE INTO binance_performance
+                        (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,ALL_ROI,ALL_PNL,encryptedUid,lastTradeTime) 
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""" 
+    data_tuple = (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,ALL_ROI,ALL_PNL,encryptedUid,lastTradeTime)
+    cursor.execute(sql_insert_with_param, data_tuple)
+    connection.commit() 
+    print(data_tuple)
 
 if __name__ == "__main__":
     driver=tor_browser()
@@ -200,6 +211,3 @@ if __name__ == "__main__":
                 break
     encryptedUid_list=list(set(encryptedUid_list))
     extract_position_data(encryptedUid_list)
-    
-
-    

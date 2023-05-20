@@ -14,7 +14,7 @@ SYSTEM_OS=platform.system()
 #global variables
 LEADERBOARD_URL='https://www.binance.com/bapi/futures/v3/public/future/leaderboard/getLeaderboardRank'
 POSITION_URL='https://www.binance.com/bapi/futures/v1/public/future/leaderboard/getPositionStatus'
-POSITION_DETAILS_URL='https://www.binance.com/bapi/futures/v1/public/future/leaderboard/getOtherPosition'
+POSITION_DETAILS_URL='https://www.binance.com/bapi/futures/v2/private/future/leaderboard/getOtherPosition'
 PERFORMANCE_URL=''
 PROXY=False
 LEADERBOARD_TIME_OPTIONS=['Daily','Weekly','Monthly','Total']
@@ -39,7 +39,7 @@ def tor_browser():
     if SYSTEM_OS=='Linux':
         return uc.Chrome(user_data_dir="/home/copytraderscrapingprofile",browser_executable_path='/usr/bin/brave-browser',headless=False,version_main=111,options=options,desired_capabilities=caps) 
     elif SYSTEM_OS=='Windows':
-        return uc.Chrome(user_data_dir="G:\\copytraderscrapingprofile",browser_executable_path='C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',headless=False,version_main=111,options=options,use_subprocess=True,desired_capabilities=caps)      
+        return uc.Chrome(user_data_dir="G:\\copytraderscrapingprofile",browser_executable_path='C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',headless=False,version_main=113,options=options,use_subprocess=True,desired_capabilities=caps)      
 
 def clean_logs(logs,target_url):
     cleaned_log=None
@@ -164,6 +164,7 @@ if __name__ == "__main__":
     driver=tor_browser()
     # crawl leaderboard
     driver.get('https://www.binance.com/en/futures-activity/leaderboard/futures')
+    input('Login first....')
     encryptedUid_list=[]
     for each_option in LEADERBOARD_TIME_OPTIONS:
         # click time dropdown filter
@@ -199,6 +200,8 @@ if __name__ == "__main__":
             if POSITION_log is None:
                 break
     encryptedUid_list=list(set(encryptedUid_list))
+    with open("encryptedUid_list.txt", "w") as output:
+        output.write(str(encryptedUid_list))
     extract_position_data(encryptedUid_list)
     
 

@@ -203,6 +203,3 @@ if __name__ == "__main__":
     with open("encryptedUid_list.txt", "w") as output:
         output.write(str(encryptedUid_list))
     extract_position_data(encryptedUid_list)
-    
-
-    

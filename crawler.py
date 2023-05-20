@@ -4,10 +4,46 @@ import undetected_chromedriver as uc
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-import mysql.connector
+import pymysql
+import logging
+import sshtunnel
+from sshtunnel import SSHTunnelForwarder
 import json
 import time
-import random
+
+# myql ssh tunnel
+ssh_host = '161.97.97.183'
+ssh_username = 'root'
+ssh_password = '$C0NTaB0vps8765%%$#'
+database_username = 'root'
+database_password = '$C0NTaB0vps8765%%$#'
+database_name = 'exchangetrading'
+localhost = '127.0.0.1'
+
+def open_ssh_tunnel(verbose=False):
+    if verbose:
+        sshtunnel.DEFAULT_LOGLEVEL = logging.DEBUG
+    global tunnel
+    tunnel = SSHTunnelForwarder(
+        (ssh_host, 22),
+        ssh_username = ssh_username,
+        ssh_password = ssh_password,
+        remote_bind_address = ('127.0.0.1', 3306)
+    )
+    tunnel.start()
+
+def mysql_connect():
+    global connection
+    connection = pymysql.connect(
+        host='127.0.0.1',
+        user=database_username,
+        passwd=database_password,
+        db=database_name,
+        port=tunnel.local_bind_port
+    )
+
+open_ssh_tunnel()
+mysql_connect()
 
 #detect platform
 SYSTEM_OS=platform.system()
@@ -61,13 +97,6 @@ def extract_json_from_log(log,driver):
 
 def extract_baseinfo(leaderboard_data):
     #mysql connection
-    connection = mysql.connector.connect(#host='localhost', 
-                                host='161.97.97.183',
-                                database='exchangetrading',
-                                user='root', 
-                                password='$C0NTaB0vps8765%%$#', 
-                                port=3306
-                                ,auth_plugin='caching_sha2_password')
     cursor = connection.cursor() 
     #iterate each item in loop
     for each_baseinfo in leaderboard_data:
@@ -95,13 +124,6 @@ def extract_position_data(encryptedUid_list):
         logs = [json.loads(lr["message"])["message"] for lr in logs_raw]
         POSTION_DETAILS_log=clean_logs(logs,POSITION_DETAILS_URL)
         if POSTION_DETAILS_log is not None:
-            connection = mysql.connector.connect(#host='localhost', 
-                                    host='161.97.97.183',
-                                    database='exchangetrading',
-                                    user='root', 
-                                    password='$C0NTaB0vps8765%%$#', 
-                                    port=3306
-                                    ,auth_plugin='caching_sha2_password')
             cursor = connection.cursor() 
             response_body=extract_json_from_log(POSTION_DETAILS_log,driver)
             data=response_body['data']
@@ -126,13 +148,6 @@ def extract_position_data(encryptedUid_list):
 
 def extract_performancedata(performance_dictionary):
     lastTradeTime=performance_dictionary['data']['lastTradeTime']
-    connection = mysql.connector.connect(#host='localhost', 
-                                host='161.97.97.183',
-                                database='exchangetrading',
-                                user='root', 
-                                password='$C0NTaB0vps8765%%$#', 
-                                port=3306
-                                ,auth_plugin='caching_sha2_password')
     cursor = connection.cursor() 
     for each_period in performance_dictionary['data']['performanceRetList']:
         if each_period['periodType']=='DAILY' and each_period['statisticsType']=='ROI':

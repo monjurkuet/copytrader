@@ -51,7 +51,7 @@ SYSTEM_OS=platform.system()
 LEADERBOARD_URL='https://www.binance.com/bapi/futures/v3/public/future/leaderboard/getLeaderboardRank'
 POSITION_URL='https://www.binance.com/bapi/futures/v1/public/future/leaderboard/getPositionStatus'
 POSITION_DETAILS_URL='https://www.binance.com/bapi/futures/v2/private/future/leaderboard/getOtherPosition'
-PERFORMANCE_URL=''
+PERFORMANCE_URL='https://www.binance.com/bapi/futures/v2/public/future/leaderboard/getOtherPerformance'
 PROXY=False
 LEADERBOARD_TIME_OPTIONS=['Daily','Weekly','Monthly','Total']
 
@@ -143,6 +143,10 @@ def extract_position_data(encryptedUid_list):
                     cursor.execute(sql_insert_with_param, data_tuple)
                     connection.commit() 
                     print(data_tuple)
+        PERFORMANCE_DETAILS_log=clean_logs(logs,PERFORMANCE_URL)
+        if PERFORMANCE_DETAILS_log is not None:
+            response_body=extract_json_from_log(PERFORMANCE_DETAILS_log,driver)   
+            extract_performancedata(response_body)       
 
 def extract_performancedata(performance_dictionary):
     lastTradeTime=performance_dictionary['data']['lastTradeTime']
@@ -165,13 +169,13 @@ def extract_performancedata(performance_dictionary):
         if each_period['periodType']=='YEARLY' and each_period['statisticsType']=='PNL':
             YEARLY_PNL = each_period['value']          
         # mysql insert  
-        sql_insert_with_param = """REPLACE INTO binance_performance
-                          (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,encryptedUid,lastTradeTime) 
-                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""" 
-        data_tuple = (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,encryptedUid,lastTradeTime)
-        cursor.execute(sql_insert_with_param, data_tuple)
-        connection.commit() 
-        print(data_tuple)
+    sql_insert_with_param = """REPLACE INTO binance_performance
+                        (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,encryptedUid,lastTradeTime) 
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""" 
+    data_tuple = (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,encryptedUid,lastTradeTime)
+    cursor.execute(sql_insert_with_param, data_tuple)
+    connection.commit() 
+    print(data_tuple)
 
 if __name__ == "__main__":
     driver=tor_browser()

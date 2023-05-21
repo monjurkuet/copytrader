@@ -1,6 +1,6 @@
 import seleniumwire.undetected_chromedriver as uc
 from seleniumwire.utils import decode
-import time,random,os,platform
+import time,random,os,platform,os
 from pymongo import MongoClient
 from datetime import datetime
 
@@ -14,6 +14,7 @@ null=None
 true=True
 false=False
 SYSTEM_OS=platform.system()
+CURRENTUSER=os.environ['USER']
 client = MongoClient('mongodb://myUserAdmin:%24C0NTaB0vps8765%25%25%24%23@161.97.97.183:27017/?authMechanism=DEFAULT')
 db = client['exchanges']
 collection = db['traderwagonSearch']
@@ -31,7 +32,7 @@ def newBrowser():
         user_data_dir="G:\\copytraderscrapingprofile2"
         browser_executable_path='C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe'
     if SYSTEM_OS=='Linux':
-        user_data_dir="/home/copytraderscrapingprofile2"
+        user_data_dir=f"/home/{CURRENTUSER}/copytraderscrapingprofile2"
         browser_executable_path='/usr/bin/brave-browser'
     driver=uc.Chrome(user_data_dir=user_data_dir,
                      browser_executable_path=browser_executable_path,
@@ -48,20 +49,30 @@ def extractReadltimeData(driver):
     for request in driver.requests:
         if request.response:
             if request.url==SEARCH_API and request.response.status_code==200:
-                request_payload=eval(request.body.decode('utf-8'))
+                #request_payload=eval(request.body)
                 response_content=eval(decode(request.response.body, request.response.headers.get('Content-Encoding', 'identity')).decode('utf-8'))
                 break
     data=response_content['data']
     for each_data in data:
-        portfolioId=each_data['portfolioId']
-        each_data={'data':each_data,'updateAt':datetime.now()}
-        collection.update_one({"portfolioId":portfolioId}, {'$set': each_data}, upsert=True)
-    print(data)
+        try:
+            portfolioId=each_data['portfolioId']
+            each_data={'data':each_data,'updateAt':datetime.now()}
+            collection.update_one({"portfolioId":portfolioId}, {'$set': each_data}, upsert=True)
+            print(each_data)
+        except Exception as e:
+            print(e)
 
 
 driver=newBrowser()
 
 driver.get('https://www.traderwagon.com/en')
+time.sleep(10)
 jsclick(POSTFOLIO_LIST)
+while True:
+    time.sleep(10)
+    extractReadltimeData(driver)
+    del driver.requests
+    jsclick(NEXTBUTTON)
 
-jsclick(NEXTBUTTON)
+driver.close()
+driver.quit()

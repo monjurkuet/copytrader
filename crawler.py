@@ -146,29 +146,30 @@ def extract_position_data(encryptedUid_list):
         PERFORMANCE_DETAILS_log=clean_logs(logs,PERFORMANCE_URL)
         if PERFORMANCE_DETAILS_log is not None:
             response_body=extract_json_from_log(PERFORMANCE_DETAILS_log,driver)   
-            extract_performancedata(response_body)       
+            extract_performancedata(response_body,encryptedUid)       
 
-def extract_performancedata(performance_dictionary):
+def extract_performancedata(performance_dictionary,encryptedUid):
     lastTradeTime=performance_dictionary['data']['lastTradeTime']
     cursor = connection.cursor() 
+    YEARLY_ROI = YEARLY_PNL = None
     for each_period in performance_dictionary['data']['performanceRetList']:
         if each_period['periodType']=='DAILY' and each_period['statisticsType']=='ROI':
             DAILY_ROI= each_period['value']
         if each_period['periodType']=='DAILY' and each_period['statisticsType']=='PNL':
             DAILY_PNL= each_period['value']
-        if each_period['periodType']=='EXACT_WEEKLY' and each_period['statisticsType']=='ROI':
+        if each_period['periodType']=='WEEKLY' and each_period['statisticsType']=='ROI':
             WEEKLY_ROI= each_period['value']
-        if each_period['periodType']=='EXACT_WEEKLY' and each_period['statisticsType']=='PNL':
+        if each_period['periodType']=='WEEKLY' and each_period['statisticsType']=='PNL':
             WEEKLY_PNL= each_period['value']
-        if each_period['periodType']=='EXACT_MONTHLY' and each_period['statisticsType']=='ROI':
+        if each_period['periodType']=='MONTHLY' and each_period['statisticsType']=='ROI':
             MONTHLY_ROI = each_period['value']
-        if each_period['periodType']=='EXACT_MONTHLY' and each_period['statisticsType']=='PNL':
+        if each_period['periodType']=='MONTHLY' and each_period['statisticsType']=='PNL':
             MONTHLY_PNL = each_period['value']
         if each_period['periodType']=='YEARLY' and each_period['statisticsType']=='ROI':
             YEARLY_ROI = each_period['value']
         if each_period['periodType']=='YEARLY' and each_period['statisticsType']=='PNL':
             YEARLY_PNL = each_period['value']          
-        # mysql insert  
+    # mysql insert  
     sql_insert_with_param = """REPLACE INTO binance_performance
                         (DAILY_ROI,DAILY_PNL,WEEKLY_ROI,WEEKLY_PNL,MONTHLY_ROI,MONTHLY_PNL,YEARLY_ROI,YEARLY_PNL,encryptedUid,lastTradeTime) 
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""" 

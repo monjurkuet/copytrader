@@ -113,7 +113,6 @@ def extract_baseinfo(leaderboard_data):
         cursor.execute(sql_insert_with_param, data_tuple)
         connection.commit() 
         print(data_tuple)
-    connection.close()
 
 def extract_position_data(encryptedUid_list):
     for encryptedUid in encryptedUid_list:
@@ -144,7 +143,6 @@ def extract_position_data(encryptedUid_list):
                     cursor.execute(sql_insert_with_param, data_tuple)
                     connection.commit() 
                     print(data_tuple)
-            connection.close()
 
 def extract_performancedata(performance_dictionary):
     lastTradeTime=performance_dictionary['data']['lastTradeTime']
@@ -181,7 +179,7 @@ if __name__ == "__main__":
     driver.get('https://www.binance.com/en/futures-activity/leaderboard/futures')
     input('Login first....')
     encryptedUid_list=[]
-    for each_option in LEADERBOARD_TIME_OPTIONS:
+    for each_option in LEADERBOARD_TIME_OPTIONS[2:]:
         # click time dropdown filter
         jsclick(LEADERBOARD_TIME_XPATH)
         time.sleep(5)

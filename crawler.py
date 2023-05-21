@@ -179,7 +179,7 @@ if __name__ == "__main__":
     driver.get('https://www.binance.com/en/futures-activity/leaderboard/futures')
     input('Login first....')
     encryptedUid_list=[]
-    for each_option in LEADERBOARD_TIME_OPTIONS[2:]:
+    for each_option in LEADERBOARD_TIME_OPTIONS:
         # click time dropdown filter
         jsclick(LEADERBOARD_TIME_XPATH)
         time.sleep(5)

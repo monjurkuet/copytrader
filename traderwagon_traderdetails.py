@@ -1,6 +1,6 @@
 import seleniumwire.undetected_chromedriver as uc
 from seleniumwire.utils import decode
-import time,random,os,platform,os
+import time,getpass,platform
 from pymongo import MongoClient
 from datetime import datetime
 
@@ -51,7 +51,7 @@ null=None
 true=True
 false=False
 SYSTEM_OS=platform.system()
-CURRENTUSER=os.environ['USER']
+CURRENTUSER=getpass.getuser()
 client = MongoClient('mongodb://myUserAdmin:%24C0NTaB0vps8765%25%25%24%23@161.97.97.183:27017/?authMechanism=DEFAULT')
 db = client['exchanges']
 collection = db['traderwagonPositions']
@@ -66,7 +66,7 @@ driver.get('https://www.traderwagon.com/en')
 for portfolioId in portfolioId_List:
     try:
         driver.get(f'https://www.traderwagon.com/en/portfolio/{portfolioId}')
-        time.sleep(2)
+        time.sleep(5)
         extractReadltimeData(driver,portfolioId)
     except Exception as e:
         print(e)

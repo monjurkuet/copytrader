@@ -1,6 +1,6 @@
 import seleniumwire.undetected_chromedriver as uc
 from seleniumwire.utils import decode
-import time,random,os,platform,os
+import time,getpass,os,platform,os
 from pymongo import MongoClient
 from datetime import datetime
 
@@ -14,7 +14,7 @@ null=None
 true=True
 false=False
 SYSTEM_OS=platform.system()
-CURRENTUSER=os.environ['USER']
+CURRENTUSER=getpass.getuser()
 client = MongoClient('mongodb://myUserAdmin:%24C0NTaB0vps8765%25%25%24%23@161.97.97.183:27017/?authMechanism=DEFAULT')
 db = client['exchanges']
 collection = db['traderwagonSearch']
@@ -66,13 +66,19 @@ def extractReadltimeData(driver):
 driver=newBrowser()
 
 driver.get('https://www.traderwagon.com/en')
-time.sleep(10)
+time.sleep(5)
+jsclick('//button[text()="Skip"]')
+time.sleep(5)
 jsclick(POSTFOLIO_LIST)
 while True:
-    time.sleep(10)
-    extractReadltimeData(driver)
-    del driver.requests
-    jsclick(NEXTBUTTON)
+    try:
+        time.sleep(10)
+        extractReadltimeData(driver)
+        del driver.requests
+        jsclick(NEXTBUTTON)
+    except Exception as e:
+        print(e)
+        break
 
 driver.close()
 driver.quit()

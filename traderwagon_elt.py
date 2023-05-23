@@ -46,8 +46,8 @@ client = MongoClient('mongodb://myUserAdmin:%24C0NTaB0vps8765%25%25%24%23@161.97
 db = client['exchanges']
 collection = db['traderwagonSearch']
 
-start = datetime.now()
-end = start- timedelta(days = 1)
+end = datetime.now()
+start = end- timedelta(days = 1)
 
 traderwagonPositions = db['traderwagonPositions'].find({"created_at": {"$gte": start, "$lt": end}})
 traderwagonPositions=[data for data in db['traderwagonPositions'].find()]

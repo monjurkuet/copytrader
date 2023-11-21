@@ -15,7 +15,7 @@ true=True
 false=False
 SYSTEM_OS=platform.system()
 CURRENTUSER=getpass.getuser()
-client = MongoClient('mongodb://myUserAdmin:%24C0NTaB0vps8765%25%25%24%23@161.97.97.183:27017/?authMechanism=DEFAULT')
+client = MongoClient('mongodb://localhost:27017/')
 db = client['exchanges']
 collection = db['traderwagonSearch']
 
@@ -28,14 +28,7 @@ def jsclick(xpth):
         pass  
 
 def newBrowser():
-    if SYSTEM_OS=='Windows':
-        user_data_dir="G:\\copytraderscrapingprofile2"
-        browser_executable_path='C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe'
-    if SYSTEM_OS=='Linux':
-        user_data_dir=f"/home/{CURRENTUSER}/copytraderscrapingprofile2"
-        browser_executable_path='/usr/bin/brave-browser'
-    driver=uc.Chrome(user_data_dir=user_data_dir,
-                     browser_executable_path=browser_executable_path,
+    driver=uc.Chrome(
                      headless=False,seleniumwire_options={
         'proxy': {
             'http': "http://45.85.147.136:24003",

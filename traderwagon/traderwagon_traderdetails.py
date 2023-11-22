@@ -1,8 +1,9 @@
 import seleniumwire.undetected_chromedriver as uc
 from seleniumwire.utils import decode
-import time,getpass,platform
+import time
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timedelta
+from tqdm import tqdm
 
 def jsclick(xpth):
     try: 
@@ -10,23 +11,6 @@ def jsclick(xpth):
         driver.execute_script("arguments[0].click();", element)
     except:
         pass  
-
-def newBrowser():
-    if SYSTEM_OS=='Windows':
-        user_data_dir="G:\\copytraderscrapingprofile2"
-        browser_executable_path='C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe'
-    if SYSTEM_OS=='Linux':
-        user_data_dir=f"/home/{CURRENTUSER}/copytraderscrapingprofile2"
-        browser_executable_path='/usr/bin/brave-browser'
-    driver=uc.Chrome(user_data_dir=user_data_dir,
-                     browser_executable_path=browser_executable_path,
-                     headless=False,seleniumwire_options={
-        'proxy': {
-            'http': "http://45.85.147.136:24003",
-            'https': "http://45.85.147.136:24003"
-                }
-            })
-    return driver
 
 def extractReadltimeData(driver,portfolioId):
     # Access requests via the `requests` attribute
@@ -37,9 +21,11 @@ def extractReadltimeData(driver,portfolioId):
                 response_content=eval(decode(request.response.body, request.response.headers.get('Content-Encoding', 'identity')).decode('utf-8'))
                 break
     data=response_content['data']
-    each_data={'data':data,'updateAt':datetime.now()}
-    collection.update_one({"portfolioId":portfolioId}, {'$set': each_data}, upsert=True)
-    print(portfolioId)
+    for each_data in data:
+        each_data['updateAt']=datetime.utcnow()
+        each_data['portfolioId']=portfolioId
+        collection.update_one({"portfolioId":portfolioId}, {'$set': each_data}, upsert=True)
+        print(portfolioId)
 
 # xpath
 POSTFOLIO_LIST='//div[text()="Portfolio List"]'
@@ -50,20 +36,29 @@ POSITIONS_API='https://www.traderwagon.com/v1/friendly/social-trading/lead-portf
 null=None
 true=True
 false=False
-SYSTEM_OS=platform.system()
-CURRENTUSER=getpass.getuser()
-client = MongoClient('mongodb://myUserAdmin:%24C0NTaB0vps8765%25%25%24%23@161.97.97.183:27017/?authMechanism=DEFAULT')
+
+client = MongoClient('mongodb://localhost:27017/') 
 db = client['exchanges']
 collection = db['traderwagonPositions']
 
-portfolioId_List=[]
-for data in db['traderwagonSearch'].find():
-    portfolioId_List.append(data['portfolioId'])
-print(f'Total : {len(portfolioId_List)} Accounts to crawl')
+# Calculate the time threshold for the last 24 hours
+current_time = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
-driver=newBrowser()
+# Query MongoDB to find documents with 'updatedAt' within the last 24 hours
+query = {
+    'updateAt': {
+        '$gte': current_time
+    }
+}
+
+# Fetch documents and extract portfolioId values
+cursor = db['traderwagonSearch'].find(query)
+portfolio_ids = [doc['portfolioId'] for doc in cursor if float(doc['data']['allRoi'])>0]
+
+driver=uc.Chrome()
 driver.get('https://www.traderwagon.com/en')
-for portfolioId in portfolioId_List:
+
+for portfolioId in tqdm(portfolio_ids):
     try:
         driver.get(f'https://www.traderwagon.com/en/portfolio/{portfolioId}')
         time.sleep(5)

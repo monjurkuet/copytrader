@@ -1,6 +1,6 @@
 import seleniumwire.undetected_chromedriver as uc
 from seleniumwire.utils import decode
-import time,getpass,os,platform,os
+import time
 from pymongo import MongoClient
 from datetime import datetime
 
@@ -13,12 +13,10 @@ SEARCH_API='https://www.traderwagon.com/v1/friendly/social-trading/lead/list-act
 null=None
 true=True
 false=False
-SYSTEM_OS=platform.system()
-CURRENTUSER=getpass.getuser()
+
 client = MongoClient('mongodb://localhost:27017/')
 db = client['exchanges']
 collection = db['traderwagonSearch']
-
 
 def jsclick(xpth):
     try: 
@@ -26,16 +24,6 @@ def jsclick(xpth):
         driver.execute_script("arguments[0].click();", element)
     except:
         pass  
-
-def newBrowser():
-    driver=uc.Chrome(
-                     headless=False,seleniumwire_options={
-        'proxy': {
-            'http': "http://45.85.147.136:24003",
-            'https': "http://45.85.147.136:24003"
-                }
-            })
-    return driver
 
 def extractReadltimeData(driver):
     # Access requests via the `requests` attribute
@@ -49,14 +37,14 @@ def extractReadltimeData(driver):
     for each_data in data:
         try:
             portfolioId=each_data['portfolioId']
-            each_data={'data':each_data,'updateAt':datetime.now()}
+            each_data={'data':each_data,'updateAt':datetime.utcnow()}
             collection.update_one({"portfolioId":portfolioId}, {'$set': each_data}, upsert=True)
             print(each_data)
         except Exception as e:
             print(e)
 
 
-driver=newBrowser()
+driver=uc.Chrome()
 
 driver.get('https://www.traderwagon.com/en')
 time.sleep(5)

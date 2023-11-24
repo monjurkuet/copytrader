@@ -24,7 +24,7 @@ def extractReadltimeData(driver,portfolioId):
     for each_data in data:
         each_data['updateAt']=datetime.utcnow()
         each_data['portfolioId']=portfolioId
-        collection.update_one({"portfolioId":portfolioId}, {'$set': each_data}, upsert=True)
+        collection.update_one({"portfolioId":portfolioId,'symbol':each_data['symbol']}, {'$set': each_data}, upsert=True)
         print(portfolioId)
 
 # xpath

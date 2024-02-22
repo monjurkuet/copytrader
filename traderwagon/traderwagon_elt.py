@@ -8,15 +8,6 @@ import logging
 import sshtunnel
 from sshtunnel import SSHTunnelForwarder
 
-# myql ssh tunnel
-ssh_host = '161.97.97.183'
-ssh_username = 'root'
-ssh_password = '$C0NTaB0vps8765%%$#'
-database_username = 'root'
-database_password = '$C0NTaB0vps8765%%$#'
-database_name = 'exchangetrading'
-localhost = '127.0.0.1'
-
 def open_ssh_tunnel(verbose=False):
     if verbose:
         sshtunnel.DEFAULT_LOGLEVEL = logging.DEBUG
@@ -42,7 +33,7 @@ def mysql_connect():
 open_ssh_tunnel()
 mysql_connect()
 
-client = MongoClient('mongodb://myUserAdmin:%24C0NTaB0vps8765%25%25%24%23@161.97.97.183:27017/?authMechanism=DEFAULT')
+client = MongoClient()
 db = client['exchanges']
 collection = db['traderwagonSearch']
 

@@ -11,15 +11,6 @@ from sshtunnel import SSHTunnelForwarder
 import json
 import time
 
-# myql ssh tunnel
-ssh_host = '161.97.97.183'
-ssh_username = 'root'
-ssh_password = '$C0NTaB0vps8765%%$#'
-database_username = 'root'
-database_password = '$C0NTaB0vps8765%%$#'
-database_name = 'exchangetrading'
-localhost = '127.0.0.1'
-
 def open_ssh_tunnel(verbose=False):
     if verbose:
         sshtunnel.DEFAULT_LOGLEVEL = logging.DEBUG
